@@ -1,8 +1,8 @@
 # Go Prompt Templates
 
-LLM-agnostic and project-agnostic prompt templates for structured Go software
-engineering workflows. Every prompt is self-contained — drop it into any LLM
-runtime or coding agent and it works without additional context.
+Pi-compatible and project-agnostic prompt templates for structured Go software
+engineering workflows. Every prompt is self-contained and uses pi's
+`$ARGUMENTS` variable for parameterization.
 
 ## Prompt Index
 
@@ -75,9 +75,9 @@ Prompts follow a consistent pattern tailored to their purpose:
 
 ## Design Principles
 
-- **LLM-agnostic**: No model names, provider names, or LLM-specific capabilities.
-  The `design-interview.md` prompt handles both multi-turn and single-turn runtimes
-  via branching instructions.
+- **pi-native**: Uses pi's `$ARGUMENTS` variable for parameterization; no model
+  names, provider names, or LLM-specific capabilities. The `design-interview.md`
+  prompt handles both multi-turn and single-turn runtimes via branching instructions.
 - **Project-agnostic**: No project names, module paths, or tool-specific commands.
   References to build commands, test commands, or conventions use generic placeholders
   (e.g., "the project's agent instructions").
