@@ -21,3 +21,8 @@ Each language directory contains its own `README.md` with a full prompt index, w
 ## License
 
 [MIT](LICENSE)
+
+---
+
+Copyright (c) 2026-present Douglas Hoard
+

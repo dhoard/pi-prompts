@@ -85,3 +85,11 @@ Prompts follow a consistent pattern tailored to their purpose:
   or IDE features.
 - **Self-contained**: Every prompt contains all the context it needs to be used.
   Drop it into any LLM runtime and it works.
+
+## License
+
+[MIT](../LICENSE)
+
+---
+
+Copyright (c) 2026-present Douglas Hoard
