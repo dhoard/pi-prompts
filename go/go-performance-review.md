@@ -1,116 +1,90 @@
 # Go Performance Review Playbook
 
-Review the provided code, profile data, benchmark output, or performance
-concern and recommend optimizations that preserve behavior and improve
-measurable outcomes.
+Review performance risks and optimization opportunities using repository,
+benchmark, profile, or workload evidence.
 
 ## Objective
 
-Identify performance issues with credible impact, recommend specific
-changes, and flag any correctness or maintainability risks those changes
-introduce. Do not optimize without evidence.
+Identify actionable performance improvements while preserving correctness,
+maintainability, public API behavior, and repository conventions.
 
 ## Input
 
-The code, profile results, benchmark output, or performance concern to
-review. Specify files, packages, or a target description: $ARGUMENTS
+$ARGUMENTS
+
+Paths to source files, profiles, benchmarks, traces, workload descriptions,
+issues, or performance observations. If evidence is missing, separate
+hypotheses from confirmed findings.
+
+## Execution Boundary
+
+This is a read-only review prompt unless the user explicitly requests changes.
+
+- Do not modify code, tests, configs, generated files, or documentation.
+- Do not run benchmarks or profilers unless explicitly requested.
+- Do not require browser/editor actions, network access, dependency changes,
+  commits, or pushes.
+- You may inspect repository files and provided performance artifacts.
+
+## Required Inspection
+
+- Read target source, tests, repository guidance, and provided performance data.
+- Identify hot paths, allocation or I/O patterns, concurrency/lifecycle behavior,
+  and existing benchmark coverage.
+- Distinguish measured bottlenecks from plausible hypotheses.
 
 ## Priorities
 
-1. Correct code first.
-2. Clean, maintainable code second.
-3. Fast code third.
+Evaluate in this order:
+
+1. Correctness-preserving performance fixes supported by evidence.
+2. Algorithmic complexity and unnecessary work in hot paths.
+3. Resource leaks, unbounded memory growth, blocking, or contention.
+4. Allocation, I/O, parsing, serialization, or caching inefficiencies.
+5. Benchmarking or profiling gaps needed before changing code.
 
 ## Rules
 
-- Do not change behavior unless explicitly asked.
-- Identify performance improvements only when justified by code, benchmarks,
-  profiling data, workload details, or clear hot-path reasoning.
-- Prefer simple, readable optimizations over clever or fragile ones.
-- Call out any optimization that could reduce readability, safety, or
-  maintainability.
-- Avoid premature optimization. Ask for benchmarks, profiling data, workload
-  details, or hot paths when needed.
-- Do not rewrite large sections unless there is a clear benefit.
-- Preserve the project's Go version compatibility and public APIs unless
-  there is a strong reason not to.
-- Prefer standard library APIs unless a dependency is already present.
-- Consider:
-  - **Goroutine leaks**: unclosed channels, missing cancellation, waitgroup
-    mismatches.
-  - **Channel buffer sizing**: too small causes unnecessary blocking; too
-    large wastes memory.
-  - **Synchronization**: `sync.Mutex` vs `sync.RWMutex` vs `atomic` (choose
-    the lightest that meets the invariant).
-  - **Escape analysis**: values that allocate on the heap when they could
-    stay on the stack (e.g. captured-by-reference in closures, interface
-    boxing).
-  - **GC pressure**: frequent allocations in hot paths, large
-    per-goroutine allocations, missing `sync.Pool` opportunities.
-  - **Memory**: slice pre-allocation (`make([]T, 0, cap)`), map sizing
-    hints, `strings.Builder` growth.
-  - **I/O**: buffered vs unbuffered readers/writers, `bufio.Scanner` vs
-    `bufio.Reader`, connection reuse, DNS resolution frequency.
-  - **Concurrency**: semaphore patterns, worker pools, errgroup,
-    context propagation and timely cancellation.
-  - **exec.Cmd**: process lifecycle, pipe management, `Wait` after `Start`.
-  - **Algorithmic complexity**: avoid O(n²) where O(n) or amortized O(1) is
-    expected.
-- Flag data races, deadlocks, or goroutine lifetime risks.
-- Follow the language idiom guardrails in the project's `.go`-level agent
-  instructions and AGENTS.md.
-
-## Project-Specific Context
-
-Read the project's AGENTS.md and any language-specific agent instructions
-before analyzing. Identify the project's architecture, hot paths, and
-performance-critical surfaces from the source code and documentation.
-
-If the project has known performance-critical areas (e.g., I/O paths,
-concurrency patterns, serialization, parsing), focus review effort there.
+- Do not recommend broad rewrites without evidence.
+- Include correctness and maintainability risks for each recommendation.
+- Prefer simple changes that can be validated with repository-discovered
+  benchmarks or tests.
+- Mark speculative optimizations as hypotheses.
 
 ## Output Format
 
-For each review, provide the following sections.
+### 1. Summary
 
-### 1. Summary of Likely Performance Issues
+Confirmed issues and highest-value opportunities, or `None`.
 
-A concise list of the most impactful performance concerns found.
+### 2. Evidence Reviewed
 
-### 2. Correctness Risks
+Files, benchmarks, profiles, traces, or workload descriptions inspected.
 
-Any correctness risks introduced by each proposed change. If a change
-introduces no correctness risk, state that explicitly. Pay special
-attention to concurrency — goroutine lifetimes, channel closure order,
-and context cancellation.
+### 3. Confirmed Performance Findings
 
-### 3. Readability and Maintainability Impact
+For each finding include path, symbol, evidence, impact, recommendation,
+correctness risk, maintainability risk, and validation.
 
-How each change affects code clarity and maintainability.
+### 4. Hypotheses Needing Measurement
 
-### 4. Recommended Changes
+Potential issues that require profiling or benchmarks, or `None`.
 
-For each recommendation:
+### 5. Recommended Validation
 
-- Before and after code when useful.
-- Why the change is faster or more efficient (fewer allocations, less
-  blocking, lower GC pressure, better parallelism, etc.).
-- Tradeoffs, explained clearly.
-- Confidence level: High, Medium, or Low.
-
-### 5. Benchmarking or Profiling Suggestions
-
-How to measure the impact of the recommended changes. Include specific
-commands and approaches:
-
-- `go test -bench=. -benchmem ./...` for benchmark comparisons
-- `go test -race ./...` for data race detection
-- `go test -cpuprofile=cpu.out -memprofile=mem.out -bench=.` for pprof
-- `go tool pprof -http=:8080 cpu.out` for interactive flame graphs
-- `go build -gcflags="-m"` for escape analysis output
-- `benchstat` for comparing benchmark runs before and after
-- Stress-testing with representative workloads for the project
+Repository-discovered or suggested benchmark/profile/test commands. Mark generic
+commands as examples only.
 
 ### 6. No-Change Cases
 
-Explicitly state when no change is recommended and why.
+Areas reviewed where no change is recommended and why.
+
+## Stop Conditions
+
+Stop and report a blocker if:
+
+- The review scope cannot be identified.
+- Required files or provided performance artifacts cannot be read.
+- Repository constraints conflict with the requested review.
+- Evidence is insufficient for confirmed findings; place remaining observations
+  under hypotheses instead of presenting them as facts.

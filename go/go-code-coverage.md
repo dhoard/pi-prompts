@@ -1,168 +1,109 @@
 # Go Coverage Improvement Playbook
 
-Run exactly one safe, deterministic coverage-improvement iteration for
-this Go project.
+Improve test coverage through one safe, focused, deterministic iteration.
 
 ## Objective
 
-Increase statement and branch coverage for one cohesive target area
-while preserving production behavior. Stop after one successful iteration.
+Add or improve tests for one cohesive target while preserving production
+behavior and repository conventions.
 
-## Agent Operating Rules
+## Input
 
-1. **Evidence-first.** Infer behavior from current source, tests, and build
-   configuration. Do not guess.
-2. **One-iteration scope.** Select one target area and stop after that
-   iteration succeeds.
-3. **Minimal safe diff.** Prefer test-only changes. Avoid broad refactors.
-4. **Deterministic tests only.** Avoid flaky timing, environment, network, or
-   SSH dependencies unless the project already provides stable utilities for
-   them.
-5. **No hidden tradeoffs.** If coverage gain requires risky behavior changes,
-   stop and surface the tradeoff.
-6. **Fail-safe workflow.** If validation fails, fix the tests or revert the
-   failing change before finishing.
+$ARGUMENTS
 
-## Project Context
+A target repository, module, package, file, coverage report, or scope
+constraint. If no target is supplied, inspect repository guidance and coverage
+output to choose one small high-value target.
 
-- Read the project's AGENTS.md and any `.go`-level agent instructions before
-  changing or validating files.
-- Identify the build command, test commands, and coverage tooling.
-- Follow the project's test conventions: same-package testing, testify
-  assertions, `*_test.go` files alongside source.
-- Every `.go` file must start with the project's copyright header block (if
-  the project uses one).
-- Static analysis gate: `go vet ./...` (verify the correct working directory
-  from AGENTS.md).
+## Execution Boundary
 
-### Coverage Commands
+This is a test-focused implementation prompt.
 
-Identify the project's test and coverage commands from AGENTS.md or the
-build system. The general pattern for Go projects:
+- Prefer adding or updating tests only.
+- Do not change production code unless tests expose a real bug and the user
+  explicitly requests a production fix.
+- Do not add dependencies unless explicitly accepted by the repository or user.
+- Do not require browser/editor actions, network access, commits, or pushes.
+- Stop after one focused successful iteration.
 
-```bash
-# Quick per-package coverage summary
-go test -cover ./...
+## Required Preflight
 
-# Detailed function-level coverage report
-go test -coverprofile=coverage.out ./...
-go tool cover -func=coverage.out
+- Read repository guidance for testing, formatting, validation, and dependencies.
+- Identify the repository's test and coverage commands from documentation or
+  build files.
+- Read the target source and nearby tests before editing.
+- Identify existing assertion libraries and test style; use what the repository
+  already uses.
 
-# HTML visualization (open in browser)
-go tool cover -html=coverage.out
+## Coverage Command Guidance
 
-# Coverage for a single package
-go test -cover ./internal/<pkg>/
-```
+Use repository-discovered commands. Generic examples for Go projects include `go test -cover ./...` and a coverage profile command. Adapt them to repository guidance.
 
-Adjust paths and commands to match the project's actual directory structure
-as documented in AGENTS.md.
+Treat any language command in this prompt as an example, not a universal
+requirement.
 
 ## Target Selection Priority
 
-Choose targets in this order:
+Choose one target in this order:
 
-1. Packages with zero or very low coverage.
-2. Small utility, helper, or configuration functions with clear behavior.
-3. Functions with uncovered branches visible in the coverage report.
-4. More complex functions only when scope is clearly bounded.
-
-### Current Coverage Baseline
-
-Run the coverage commands above to establish the current baseline before
-targeting specific packages. Use the output to identify high-value targets:
-
-- Packages with zero or very low coverage.
-- Functions with uncovered branches visible in the coverage report.
-- Error paths and edge cases that lack test coverage.
-
-## Constraints
-
-- Prefer adding or extending tests only. Test files must use the same
-  package as the source (e.g., `package foo` in `foo_test.go`).
-- Do not change production code unless tests reveal a real bug and the user
-  explicitly asks for a production fix.
-- Preserve public API and behavior.
-- Do not weaken `go vet` or test gates.
-- Do not add dependencies unless clearly necessary and acceptable in the
-  repository.
-- Use `github.com/stretchr/testify` for assertions (`assert`, `require`).
-- Follow Go table-driven test conventions for parameterized test cases.
+1. Low or zero coverage code with clear behavior.
+2. Uncovered branches in small utility or configuration code.
+3. Error/error paths and edge cases.
+4. Boundary values, empty values, and nil handling.
+5. More complex code only when the target is clearly bounded.
 
 ## Iteration Workflow
 
-### 1. Preflight
+### 1. Establish Baseline
 
-- Read the project's AGENTS.md for test conventions, build commands, and
-  coding standards.
-- Run `go test -cover ./...` to verify the current baseline.
-- Note the target area's current coverage from the output.
+Run the narrowest repository-discovered coverage or test command needed to
+identify the target. Record current coverage or explain why coverage cannot be
+measured.
 
-### 2. Generate or Inspect Coverage
+### 2. Select One Cohesive Target
 
-- Run `go test -coverprofile=coverage.out ./...` to generate the
-  coverage profile.
-- Run `go tool cover -func=coverage.out | grep <target-package>` to get
-  function-level detail for the target.
-- Optionally run `go tool cover -html=coverage.out` for visual inspection.
+Choose one function, method, class, file, or tightly related set of behavior.
+Confirm real uncovered behavior from source, tests, and coverage evidence.
 
-### 3. Select One Cohesive Target
+### 3. Implement Tests
 
-- Choose one function or a tightly related small set of functions in the
-  same file.
-- Confirm real uncovered branches from the coverage report and source code.
-- Prefer functions that are self-contained with clear input/output contracts.
+- Add to existing tests when possible.
+- Match package/class structure and repository test style.
+- Cover meaningful behavior: success, error paths, edge cases, boundary
+  values, and nil behavior.
+- Avoid tests that only assert implementation details.
 
-### 4. Implement Tests
+### 4. Validate
 
-- Add tests to the existing `*_test.go` file for the target package, or
-  create a new one following the same conventions.
-- Match the existing style: testify `assert`/`require`, table-driven tests
-  where appropriate, descriptive test names.
-- Include the copyright header if creating a new test file.
-- Cover meaningful branches: success paths, error paths, edge cases,
-  boundary values, empty/nil inputs.
+Run the narrowest relevant test first, then broader validation required by
+repository guidance. Run coverage again if feasible to confirm the delta.
 
-### 5. Validate
+### 5. Report
 
-- Run `go vet ./...` to ensure no static analysis regressions.
-- Run `go test ./<target-pkg>/` to verify the target package passes.
-- Run `go test ./...` to ensure the full test suite has no regressions.
-- Optionally re-run `go test -cover ./...` to confirm the coverage delta.
+Report:
 
-### 6. Report
+- target selected and rationale;
+- files changed;
+- commands run with pass/fail results;
+- coverage delta, or why it could not be measured;
+- remaining high-value uncovered behavior in the target area.
 
-Produce:
+## Stop Conditions
 
-- Target selected and rationale.
-- Files changed (test files only, unless a bug was found and fixed).
-- Commands run with pass or fail results.
-- Coverage delta observed: before → after for the target function(s).
-- Remaining high-value uncovered branches in the target area.
+Stop if:
 
-## Coverage Opportunity Checklist
+- No safe bounded test target can be identified.
+- Required repository context cannot be read.
+- Improving coverage requires production changes not explicitly requested.
+- Validation failures are unrelated and cannot be safely handled in scope.
+- One focused coverage iteration has completed.
 
-When creating tests, prioritize these Go-specific patterns:
+## Final Response
 
-- **Error return paths**: functions returning `(T, error)` — cover both the
-  success and error branches.
-- **Nil/zero-value inputs**: `nil` slices, maps, pointers, interfaces; empty
-  strings; zero structs.
-- **Boundary values**: empty slices vs nil slices, max/min int values,
-  string length boundaries (empty, single character, very long).
-- **Table-driven completeness**: add rows to existing table-driven tests
-  for uncovered branches.
-- **Exported API surface**: unexported helper functions called through
-  exported entry points — ensure the public path exercises the private
-  branches.
-- **Error wrapping**: verify `fmt.Errorf("...: %w", err)` wrapping is
-  exercised and error messages are correct.
-- **Concurrency safety**: if the target uses goroutines, channels, or
-  mutexes, ensure test coverage includes concurrent access patterns.
-- **Context cancellation**: functions accepting `context.Context` — cover
-  cancellation and deadline-exceeded paths where feasible.
+Report only:
 
-## Stop Condition
-
-Stop after one successful focused iteration, even if additional coverage
-gaps remain.
+- target selected and rationale;
+- files changed;
+- validation and coverage commands run with results;
+- coverage delta, or why it could not be measured;
+- blockers and assumptions, if any.

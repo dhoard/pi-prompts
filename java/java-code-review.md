@@ -1,271 +1,133 @@
 # Java Code Review Playbook
 
-Perform an engineering-grade review of the provided Java code. Cover
-correctness, maintainability, performance, security, readability,
-testability, architecture, and appropriate language idioms.
+Perform an evidence-backed Java code review focused on correctness, safety,
+maintainability, performance, testing, and architecture.
 
 ## Objective
 
-Identify real defects, production risks, and maintainability problems.
-Produce actionable findings with severity, location, impact, and a
-recommended fix. Prefer evidence over speculation.
+Review the supplied Java code and produce prioritized findings with concrete
+repository evidence and practical recommendations.
 
 ## Input
 
 $ARGUMENTS
 
-The Java code to review.
+Paths to Java source files, tests, packages, modules, issues, or review scope.
+If no concrete scope can be identified, ask for one or report a blocker.
 
-## Review Priorities
+## Execution Boundary
 
-Prioritize findings in this order:
+This is a read-only review prompt.
 
-1. Real defects and production risks.
-2. Security, concurrency, lifecycle, and resource-safety issues.
-3. Architectural weaknesses and maintainability problems.
-4. Performance bottlenecks with credible impact.
-5. Modern Java improvements that materially improve correctness,
-   readability, maintainability, safety, performance, or design clarity.
+- Do not modify code, tests, configs, generated files, or documentation.
+- Do not run build, test, formatting, packaging, release, commit, push, network,
+  browser, or editor actions unless explicitly requested.
+- You may inspect repository files and use read-only search/listing commands.
 
-Avoid speculative concerns, low-impact style nitpicks, and novelty
-modernization. Assume the project's target Java version unless the code
-explicitly targets another version. Follow the project's agent instructions
-as the project-level contract.
+## Required Inspection
+
+- Read the target source, nearby tests, build/configuration files, and
+  repository guidance.
+- Identify Java version, frameworks, public API contracts, exception behavior,
+  nullability expectations, threading/lifecycle rules, and test conventions.
+- Review only what is in scope.
 
 ## Finding Requirements
 
-For every issue:
+Every finding must include:
 
-1. Explain the problem clearly.
-2. Describe why it matters.
-3. Assess severity: Critical, High, Medium, or Low.
-4. Show the exact code involved when available.
-5. Recommend a fix.
-6. Provide improved code examples when useful.
-7. Explain tradeoffs when relevant.
+- severity: Critical, High, Medium, or Low;
+- exact file path and method/class/interface;
+- repository evidence;
+- impact;
+- trigger or example scenario;
+- recommended fix;
+- suggested test or validation.
+
+Separate confirmed findings from `Needs confirmation`. Avoid speculative
+concerns, style-only nitpicks, and novelty suggestions unless they have concrete
+maintainability or correctness impact.
 
 ## Analysis Checklist
 
 ### Correctness and Bugs
 
-- Null pointer risks
-- Logic errors
-- Resource leaks
-- Concurrency and thread-safety issues
-- Race conditions
-- Exception handling problems
-- Improper use of collections
-- Edge case failures
-- Infinite loops or recursion risks
-- Incorrect `equals` or `hashCode` implementations
-- Broken comparisons
-- Floating-point precision issues
-- Time and date API misuse
-- Mutable shared state
-- Serialization issues
-- Improper synchronization
-- Unsafe casting
-- Generic type safety issues
+Nullability problems, invalid state, broken equality/hashCode, incorrect
+collections usage, resource leaks, exception swallowing, boundary errors,
+time/date mistakes, concurrency bugs, and API contract violations.
 
 ### Security
 
-- SQL injection
-- Command injection
-- Path traversal
-- Unsafe deserialization
-- Sensitive data exposure
-- Weak cryptography
-- Hardcoded credentials
-- Authentication or authorization flaws
-- Unsafe reflection usage
-- XXE vulnerabilities
-- SSRF risks
-- Insecure random generation
-- Logging sensitive information
-- JWT or security token misuse
-- Unsafe file handling
-- Insecure temporary file creation
-- Trust boundary violations
+Input validation, injection risks, unsafe deserialization, path handling,
+credential handling, authorization checks, and dependency-risk indicators when
+evidence exists in the reviewed code.
 
 ### Performance
 
-- Inefficient algorithms
-- Excessive object creation
-- Memory leaks
-- N+1 database query patterns
-- Unnecessary synchronization
-- Poor stream usage
-- Blocking operations
-- Inefficient loops
-- Expensive regex usage
-- Large collection inefficiencies
-- Improper caching
-- Boxing and unboxing overhead
-- Excessive allocations in hot paths
-- Inefficient I/O usage
-- Misuse of parallel streams
-- Premature optimization
-- Unbounded memory growth
+Algorithmic complexity, unnecessary allocations, inefficient I/O, blocking hot
+paths, unbounded memory growth, misuse of streams or parallelism, and caching
+risks.
 
 ### Maintainability and Readability
 
-- Code smells
-- Duplicated logic
-- Long methods or classes
-- Poor naming
-- Magic numbers or strings
-- High cyclomatic complexity
-- Tight coupling or low cohesion
-- SOLID violations
-- Dead code
-- Over-engineering
-- Missing useful documentation or comments
-- Inconsistent coding style
-- Hidden side effects
-- Deep nesting
-- Missing braces on control flow statements (`if`, `else`, `while`, `for`,
-  `do-while`, `switch`, `case` blocks)
-- Excessive abstraction
-- Feature envy
-- God classes
-- Anemic domain models
+High-impact duplication, excessive coupling, unclear names, deep nesting, hidden
+side effects, dead code, missing useful documentation, and over-engineering.
 
 ### Modern Java Idioms
 
-Prefer modern Java features when they improve clarity, safety, or
-maintainability:
-
-| Prefer | Over |
-| --- | --- |
-| `if (obj instanceof String s)` | `if (obj instanceof String) { String s = (String) obj; }` |
-| Switch expressions (`->`, `yield`) | Switch statements with `break` and mutable accumulation |
-| Records | Hand-written data classes |
-| Sealed classes and interfaces | Open hierarchies where subtype control matters |
-| Text blocks (`"""`) | Escaped or concatenated multi-line strings |
-| `stream.toList()` | `.collect(Collectors.toList())` |
-| `List.of` / `Set.of` / `Map.of` | Wrapped mutable collections |
-| `var` when the RHS type is obvious | Redundant explicit declarations |
-| Records over Lombok value classes | Lombok where a record suffices |
-| Try-with-resources | Manual `close()` in `finally` |
-
-Also check for:
-
-- Proper `Optional` usage. Avoid `get()` without presence checks. Avoid
-  `Optional` for fields or parameters.
-- Stream API misuse, side effects, and order-dependent behavior.
-- `var` misuse when the type is not obvious.
-- Final fields and immutability by default.
-- Proper generics and exception hierarchy usage.
-
-Do not recommend newer features when they reduce readability or provide
-little practical value.
+Recommend modern Java features only when they improve clarity, safety, and
+match the repository's configured Java version and style.
 
 ### Framework-Specific Concerns
 
-If the project uses Spring, Hibernate, Lombok, or similar frameworks,
-additionally check for:
-
-- Spring Boot dependency injection, bean lifecycle, configuration, scanning,
-  or circular dependency problems.
-- Hibernate and JPA lazy loading, N+1 queries, transaction boundaries,
-  mapping issues, cascade misuse, or fetch strategy problems.
-- REST API HTTP semantics, contracts, validation, versioning,
-  serialization, and error handling issues.
-- Jackson serialization and deserialization risks, infinite recursion, and
-  polymorphic type handling issues.
-- Lombok hidden behavior, equality and hashCode pitfalls, builder misuse,
-  and immutability concerns.
+If the repository uses frameworks such as dependency injection, persistence,
+serialization, web APIs, or code generation, review lifecycle, configuration,
+transaction, serialization, validation, and hidden-behavior risks only when
+relevant evidence exists.
 
 ### Testing
 
-- Missing unit tests or edge case coverage
-- Untestable code
-- Poor separation of concerns
-- Mocking problems or excessive mocking
-- Flaky or time-dependent tests
-- Non-deterministic behavior
-- Integration testing gaps
-- Poor fixture setup
-- Lack of contract testing
-
-Recommend better testing boundaries, refactoring for testability, and
-improved test design.
+Missing behavior tests, flaky tests, time-dependent tests, excessive mocking,
+poor fixtures, and integration or contract testing gaps.
 
 ### Architecture and Design
 
-- Layering violations
-- Domain modeling issues
-- Package organization problems
-- Microservice boundary concerns
-- API contract problems
-- Scalability concerns
-- Distributed systems risks
-- Excessive coupling between layers
-- Improper abstraction boundaries
-- Transactional boundary issues
-- Poor modularity
-- Shared mutable state
-- Eventing or messaging concerns
-- Resilience and fault tolerance issues
-
-Evaluate whether the design scales cleanly, supports maintainability,
-minimizes operational risk, and follows clean architecture principles
-where appropriate.
+Layering, boundaries, cohesion, coupling, transaction boundaries, resilience,
+shared mutable state, and modularity concerns with concrete impact.
 
 ## Output Format
 
 ### 1. Executive Summary
 
-- Overall assessment
-- Main strengths
-- Most serious risks
-- Architectural observations
+Overall assessment, main strengths, and most serious risks.
 
-### 2. Critical Findings
+### 2. Critical and High Findings
 
-List only Critical and High severity issues.
+Critical and High findings only, or `None`.
 
 ### 3. Detailed Findings by Severity
 
-Group findings under Critical, High, Medium, and Low. For each finding:
+Group findings under Critical, High, Medium, and Low. Use the required finding
+fields.
 
-- Issue
-- Explanation
-- Impact
-- Code
-- Recommended fix
-- Improved example when useful
+### 4. Needs Confirmation
 
-### 4. Suggested Refactorings
+Suspicious observations that need more evidence, or `None`.
 
-Prioritize by ROI and risk reduction. Include high-impact refactoring
-opportunities, simplification opportunities, appropriate modern Java
-improvements, architectural improvements, safer alternatives, and
-performance improvements.
+### 5. Suggested Refactorings
 
-### 5. Positive Observations
+Prioritized, incremental refactorings with risk and validation notes, or `None`.
 
-Identify good design decisions, clean implementations, effective patterns,
-strong encapsulation, good API design, proper modern Java usage, and
-effective testing approaches.
+### 6. Positive Observations
 
-### 6. Overall Code Quality Score
+Good design decisions, tests, API boundaries, or maintainability choices.
 
-Provide a score from 1 to 10 with a short justification:
+### 7. Overall Code Quality Score
 
-- 9–10: production-grade, maintainable, low-risk
-- 7–8: solid with moderate improvements needed
-- 5–6: noticeable design or quality concerns
-- 3–4: significant technical debt or risks
-- 1–2: severe correctness, security, or design failures
+Score from 1 to 10 with a concise justification.
 
-## Review Style
+## Stop Conditions
 
-Be direct, technical, specific, actionable, and evidence-based.
-
-Avoid generic advice, unsupported speculation, excessive praise, trivial
-modernization suggestions, and style nitpicks without impact.
-
-Prefer production-grade solutions, simpler designs, clear tradeoff analysis,
-safer implementations, and incremental improvements over rewrites unless a
-rewrite is necessary.
+Stop and report a blocker if the review scope cannot be identified, required
+files cannot be read, or repository constraints make the requested review
+invalid.
